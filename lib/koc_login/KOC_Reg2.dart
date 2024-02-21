@@ -1,22 +1,26 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:koc_login_demo_proj/LoginScreen.dart';
-import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
-class KOC_RegistrationPage extends StatefulWidget {
+class KOC_RegistrationPage2 extends StatefulWidget {
   @override
-  KOC_RegistrationPageState createState() => KOC_RegistrationPageState();
+  KOC_RegistrationPageState2 createState() => KOC_RegistrationPageState2();
 }
 
-class KOC_RegistrationPageState extends State<KOC_RegistrationPage> {
+class KOC_RegistrationPageState2 extends State<KOC_RegistrationPage2> {
   final TextEditingController civilIDController = TextEditingController();
 
   String uuid = "";
   String requestId = "";
   String requestType = "";
+  String authToken = "";
+
+  int counter = 0;
+  Timer? timer;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +53,9 @@ class KOC_RegistrationPageState extends State<KOC_RegistrationPage> {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode({
-        "CivilID": 298010104246,
+        "CivilID": 282031702767,
+        // "CivilID": 298010104246,
+        // "CivilID": 285121208539,
         "DeviceToken": uuid
       }),
     );
@@ -69,33 +75,42 @@ class KOC_RegistrationPageState extends State<KOC_RegistrationPage> {
       print('ID: $requestId');
       print('REQUEST TYPE: $requestType"');
 
-     // registerStepTwo();
-
-
+      // Start timer after successful registration step 1
+      startTimer();
     } else {
       // Registration failed
       print('Registration failed');
       var responseData = json.decode(response.body);
       print(responseData);
-
     }
+  }
+
+  void startTimer() {
+    // Start the timer to call registerStepTwo every 5 seconds
+    timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      // Check if we've reached 120 iterations or authToken is received
+      if (counter < 60 && authToken.isEmpty) {
+        registerStepTwo();
+        counter++;
+      } else {
+        // Stop the timer if conditions are met
+        timer.cancel();
+      }
+    });
   }
 
   Future<void> registerStepTwo() async {
     setState(() {
       loading = true; // Show loader
     });
-    print("request id ", );
-    print(requestId);
-     final response = await http.post(
 
+    final response = await http.post(
       Uri.parse('https://apps.kockw.com/did/api/kocdigitalid/RegisterUserStep2'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode({
-        // "RequestID": requestId,
-        "RequestID": "592a0f36-bdb6-41b6-a946-b27dcb75abcc",
+        "RequestID": requestId,
         "CivilID": "298010104246",
         "DeviceToken": "d9bcda6-6904-41e1-8299-488a3e298380",
         "ReqType": "Register"
@@ -109,19 +124,20 @@ class KOC_RegistrationPageState extends State<KOC_RegistrationPage> {
     if (response.statusCode == 200) {
       // Registration successful
       print('Registration successful');
-      var responseData = json.decode(response.body);
+      var responseData2 = json.decode(response.body);
       print("RESPONSE FROM 2 API");
-      print(responseData);
-      /*var requestId = responseData['RequestID'];
-      var requestType = responseData['ReqType'];
+      print(responseData2);
+      authToken = responseData2['AuthToken'];
 
-      print('ID: $requestId');
-      print('Token: $requestType"');*/
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      if (authToken.isNotEmpty) {
+        // If authToken is received, stop the timer
+        timer?.cancel();
+        // Navigate to next screen (e.g., LoginScreen)
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      }
     } else {
       // Registration failed
       print('Registration failed');
@@ -146,17 +162,13 @@ class KOC_RegistrationPageState extends State<KOC_RegistrationPage> {
                 decoration: InputDecoration(labelText: 'Civil ID'),
               ),
               SizedBox(height: 16),
-
               SizedBox(height: 32),
               ElevatedButton(
                 onPressed: loading ? null : registerStepOne,
                 child: loading ? CircularProgressIndicator() : Text('Register Step 1'),
               ),
               SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: loading ? null : registerStepTwo,
-                child: loading ? CircularProgressIndicator() : Text('Register Step 2'),
-              ),
+
             ],
           ),
         ),

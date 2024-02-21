@@ -4,6 +4,7 @@ import 'package:koc_login_demo_proj/koc_login/KOC_Reg1.dart';
 import 'LoginScreen.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'utility/ApiData.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -12,6 +13,10 @@ class SplashScreen extends StatefulWidget {
 
 class SplashScreenState extends State<SplashScreen> {
   String uuid = "";
+
+  var myUrls = ApiData.myName;
+
+
 
   @override
   void initState() {
